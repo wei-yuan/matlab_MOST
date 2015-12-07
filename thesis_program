@@ -1,0 +1,175 @@
+% ******************   MOST    ******************** %
+clear all; % Clear all parameters
+clc; 
+close all;  % Close all figures
+
+%%
+% ******************   MOST    ******************** %
+finf = dir('your_file_path\*.jpg');
+%n = length(finf);
+n = 3437;
+data = cell(n,1);
+len = zeros(n,1);
+
+for k=1:n  
+    filename = [finf(k).name];  
+    data{k} = imread(filename);
+    %F(k) = im2frame(data{k});
+end
+
+%%
+%Parameter
+dw1 = zeros(n,1);
+dw2 = zeros(n,1);
+width = zeros(n,1);
+dh1 = zeros(n,1);
+dh2 = zeros(n,1);
+height = zeros(n,1);
+
+
+%Making movie
+writerObj  = VideoWriter('your_file_path\your_filename.avi');
+writerObj.FrameRate = 60;
+open(writerObj);
+
+for k=1:n
+    %轉灰階
+    img = rgb2gray(data{k});
+
+    [rows columns] = size(img);
+    threshold = zeros(rows,columns);
+    %調整2階灰階值
+    th_val_up = 205;
+    th_val_lo = 30;
+
+    for y = 1:columns
+        for x = 1:rows
+            if img(x,y) > th_val_up
+                threshold(x,y) = 255;
+            elseif img(x,y) > th_val_lo && img(x,y) < th_val_up
+                threshold(x,y) = 127;
+            else
+                threshold(x,y) = 0;
+            end    
+        end
+    end    
+
+    %figure(1),imshow(threshold);
+    %title('thresholding image');
+
+    % Images merging into one
+    new_img = [img threshold];    
+
+    %Width
+    org_Pt_X = 400; %取樣點X座標 
+    org_Pt_Y = 605; %取樣點Y座標 
+
+    shift = 1030;
+
+    r_X = 200; %紅線
+    r_Y = 50;
+
+    g_X = 70; %綠線
+    g_Y = 30;
+
+    b_Y = 60; %藍線
+
+    pw1_x = org_Pt_X + shift;
+    pw1_y = org_Pt_Y;
+    pw2_x = org_Pt_X + shift - g_X;
+    pw2_y = org_Pt_Y - g_Y;
+
+    %Height
+    ph1_x = org_Pt_X + shift;
+    ph1_y = org_Pt_Y;
+    ph2_x = org_Pt_X + shift;
+    ph2_y = org_Pt_Y + b_Y;
+
+    % Calculate line Width 
+    x1 = 0;
+    x2 = 0;
+    delwx = pw1_x - pw2_x;
+    delwy = pw1_y - pw2_y;
+    delhy = ph1_y - ph2_y;
+    %slope = delwy/delwx;
+    % X => horizontal
+    for i = 1:abs(delwx);   
+        if new_img(pw1_y , pw1_x - i ) == 255   % 矩陣(列 , 行) => 與插入直線的座標位置相反
+            x1 = x1+1;
+            dw1(k,1) = x1;
+        end    
+    end
+    % Y => vertical
+    for i = 1:abs(delwy);
+        if new_img(pw2_y + i, pw2_x ) == 255   % 矩陣(列 , 行) => 與插入直線的座標位置相反
+            x2 = x2+1;
+            dw2(k,1) = x2;
+        end    
+    end
+    
+    width(k,1) = sqrt(dw1(k,1)^2 + dw2(k,1)^2);
+    
+    % Calculate line Height
+    y1 = 0;
+    for i = 1:abs(delhy);
+        if new_img(pw1_y + i ,pw1_x) == 127   % 矩陣(行,列) => 與插入直線的座標位置相反
+            y1 = y1+1;
+            height(k,1) = y1; 
+        end 
+    end
+
+    %insert text into video
+    new_img = insertText(new_img,[460+930 20],'height','FontSize',62,'BoxColor','yellow');
+    new_img = insertText(new_img,[460+930 120],height(k,1),'FontSize',62,'BoxColor','yellow');
+    new_img = insertText(new_img,[460+700 20],'Width','FontSize',62,'BoxColor','green');
+    new_img = insertText(new_img,[460+700 120],width(k,1),'FontSize',62,'BoxColor','green');
+
+    %insert rectangle 
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X      org_Pt_Y ... 
+                                    org_Pt_X-r_X  org_Pt_Y + r_Y],...                  %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','red');
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X+shift      org_Pt_Y ...
+                                    org_Pt_X+shift-r_X  org_Pt_Y + r_Y],...        %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','red');
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X      org_Pt_Y ... 
+                                    org_Pt_X-g_X  org_Pt_Y - g_Y ],...            %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','green');
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X+shift     org_Pt_Y ...
+                                    org_Pt_X+shift-70  org_Pt_Y - g_Y ],...  %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','green');                        
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X  org_Pt_Y ...
+                                    org_Pt_X  org_Pt_Y + b_Y ],...               %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','blue');
+    new_img = insertShape(new_img, ...
+                            'line',[org_Pt_X+shift  org_Pt_Y ...
+                                    org_Pt_X+shift  org_Pt_Y + b_Y ],...     %[(x11 y11) (x12 y12)]
+                            'LineWidth',6,...
+                            'color','blue');                        
+    imshow(new_img);
+    title('Thresholding method');
+    drawnow;
+    % binary to 8-bit integer
+    mov = im2uint8(new_img);
+    
+    % convert images to movie
+    %Mov = im2frame(mov,cmap);
+    Mov = im2frame(mov); 
+    
+    %# save as AVI file
+    writeVideo(writerObj,Mov);    
+    %toc
+end
+
+%%
+close(writerObj);
+clear(data) % 釋放記憶體 
