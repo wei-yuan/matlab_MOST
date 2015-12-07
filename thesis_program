@@ -172,4 +172,4 @@ end
 
 %%
 close(writerObj);
-clear(data) % 釋放記憶體 
+clear data % 釋放記憶體 clear variable1, ..., variableN
