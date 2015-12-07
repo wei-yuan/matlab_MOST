@@ -6,7 +6,7 @@ close all;  % Close all figures
 %%
 % ******************   MOST    ******************** %
 finf = dir('your_file_path\*.jpg');
-%n = length(finf);
+%n = length(finf);  %若要處理全部圖片檔案，則使用此行指令
 n = 3437;
 data = cell(n,1);
 len = zeros(n,1);
