@@ -1,0 +1,71 @@
+%% - - Initail System - ->>
+close all;
+clear all;
+clc;
+ 
+%% - - Input Video - ->>
+video_file = 'your_file_path\your_file_name.avi';
+video      = VideoReader(video_file);
+ 
+% -- Video Parameter Setting -->
+frameRate    = round(video.FrameRate);
+nb_frame     = get(video, 'numberOfFrames');
+duration     = video.Duration; 
+resize_ratio = 1;
+frame_offset = 0;
+ 
+% -- Video Save Setting -->
+video_save     = 0;                  %控制存檔與否
+videoName      = '檔案名稱.avi';
+videoExtension = 'Uncompressed AVI'; %檔案格式
+ 
+% -- GMM Background Substraction Setting -->
+trainFrame = fix(frameRate * duration);
+initVariance = 10^2;
+minRatio = 0.7;
+numGauss = 8;
+fgDetector = vision.ForegroundDetector('NumTrainingFrames',trainFrame,...
+    'MinimumBackgroundRatio',minRatio,'NumGaussians',numGauss,...
+    'InitialVariance',initVariance);
+%% - - Read First Frame - ->>
+frame = read(video,1 + frame_offset);
+frame = imresize(frame,resize_ratio);
+[h,w,~] = size(frame);
+ 
+%% - - Initial Display - ->>
+figure(1);
+fig = imshow(frame,'border','tight');
+hold on;
+ 
+%% - - Run Tracking Program - ->>
+for k = 1 : nb_frame - frame_offset
+    tic;
+    %% - - Read Frame & Pre-processing - ->>
+    frame     = read(video,k + frame_offset);
+    frame     = imresize(frame,resize_ratio);
+    
+    %  -- GMM Background Substraction -->
+    segmentation = step(fgDetector,frame);  % foregroundMask = step(H,I), I = input image  
+    
+    %% - - Corner Detection Setting - ->>
+    C = corner(frame(:,:,1), method, N);
+    
+    %% - - Display Image - ->>
+    set(fig,'CData',segmentation);          % fig為圖形的握把物件代稱
+    drawnow;
+    
+    %% - - Save Video - ->>
+    if video_save == 1;
+        FrameSave(k) = getframe(gcf);
+    end
+    toc;
+end
+ 
+%% - - Save Video - ->>
+if video_save == 1
+    VideoSave = VideoWriter(videoName,videoExtension);
+    VideoSave.FrameRate = frameRate;
+    open(VideoSave);
+    writeVideo(VideoSave,FrameSave);
+    close(VideoSave);
+end
