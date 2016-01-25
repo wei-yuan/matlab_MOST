@@ -1,0 +1,42 @@
+clear all; % Clear all parameters
+clc; 
+close all;  % Close all figures
+
+% ********************* %
+c = zeros(1000,1000);
+
+% ***** 輸入x1,x2 ***** %
+prompt = 'What is the first value? ';
+start_pt = input(prompt);
+
+prompt = 'What is the second value? ';
+end_pt = input(prompt);
+
+
+
+% ***** 求新的y座標 ***** %
+slope = (end_pt - start_pt)/(1000 -1);
+i = 1:1000;
+
+% 須考慮起始點與終點
+x = slope * i + start_pt; 
+
+% ***** 求最近點 ***** %
+new_x = floor(x);
+if start_pt == 1 && end_pt == 1000
+    if new_x(1000) > 1000   %避免讓 new_y(1000) 超過1000
+        new_x(1000) = 1000;
+    end
+elseif start_pt == 1000 && end_pt == 1   
+    if new_x(1000) == 0   %避免讓 new_y(1000) 超過1000
+        new_x(1000) = 1;
+    end
+end
+
+% ***** 將指定點變成白色 ***** %
+for i =1:1000
+  c(new_x(i),i) = 256;
+end
+
+% ***** 展示影像 ***** %
+imshow(c);
